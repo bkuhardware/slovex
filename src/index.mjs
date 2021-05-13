@@ -1,9 +1,9 @@
-import Slovex from '../dist/Slovex.common.js'
+import Slovex from '../dist/slovex.common.js'
 
 const {
 
 } = Slovex
 
 export {
-  Slovex as default,
+  Slovex as default
 }
