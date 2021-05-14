@@ -8,20 +8,26 @@ function installState(sliceNode) {
     const state = sliceNode.state;
     if (sliceNode.noNamespaced) {
         Object.keys(state).forEach((key) => {
-            Vue.set(parentState, key, state[key]);
+            parentState[key] = state[key];
         });
     }
     else {
-        Vue.set(parentState, sliceNode.name, state);
+        parentState[sliceNode.name] = state;
     }
 }
 
 function installSlices(store, sliceNode) {
     installState(sliceNode);
+
+    sliceNode.children.forEach((childSliceNode) => installSlices(store, childSliceNode));
 }
 
 function createStoreVm(store) {
-
+    store._vm = new Vue({
+        data: {
+            $$state: store.state
+        }
+    });
 }
 
 function addParentState(sliceNode, parentState) {

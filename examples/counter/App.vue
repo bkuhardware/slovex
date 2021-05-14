@@ -1,12 +1,19 @@
 <template>
-    <div>Hello</div>
+    <div>{{ $slovex.state.gay }}</div>
 </template>
 
 <script>
     export default {
         name: "App",
+        data() {
+            return {
+                dit: 100
+            }
+        },
         mounted() {
-            console.log(this.$slovex);
+            this.$slovex.state.gay = 1000
+            console.log(this.$slovex.state);
+            console.log(this.$data);
         }
     }
 </script>
