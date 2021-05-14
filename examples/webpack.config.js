@@ -33,7 +33,7 @@ module.exports = {
 
   resolve: {
     alias: {
-      vuex: path.resolve(__dirname, '../src/index.js')
+      slovex: path.resolve(__dirname, '../src/index.js')
     }
   },
 

@@ -1,10 +1,12 @@
 import Slovex from '../dist/slovex.common.js'
 
 const {
-    install
+    install,
+    createStore
 } = Slovex
 
 export {
     Slovex as default,
-    install
+    install,
+    createStore
 }
