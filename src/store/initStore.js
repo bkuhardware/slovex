@@ -3,6 +3,7 @@ function initStore() {
     store.state = {};
     store.getters = {};
     store._actions = {};
+    store._namespaceSliceMap = Object.create(null);
     return store;
 }
 

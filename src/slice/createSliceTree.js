@@ -1,5 +1,3 @@
-import SlideNode from "./sliceNode";
-
 function getSliceNamespace(rawNamespace, parentNamespace) {
     if (!rawNamespace)
         return parentNamespace;
@@ -13,6 +11,7 @@ function createSliceTree(rawSlice, parentNamespace) {
     sliceNode.mutations = rawSlice.mutations || {};
     sliceNode.effects = rawSlice.effects || {};
     const rawNamespace = rawSlice.namespace || '';
+    sliceNode.name = rawNamespace;
     sliceNode.namespace = getSliceNamespace(rawNamespace, parentNamespace);
     sliceNode.noNamespaced = sliceNode.namespace === '';
     const childSlices = rawSlice.slices || [];
