@@ -1,7 +1,7 @@
 function getSliceNamespace(rawNamespace, parentNamespace) {
     if (!rawNamespace)
         return parentNamespace;
-    return parentNamespace ? `${parentNamespace}->${rawNamespace}` : rawNamespace;
+    return parentNamespace ? `${parentNamespace}.${rawNamespace}` : rawNamespace;
 }
 
 function createSliceTree(rawSlice, parentNamespace) {

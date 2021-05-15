@@ -2,39 +2,72 @@ import initStore from "./initStore";
 import {boundDispatchToStore} from "../dispatch";
 import createSliceTree from "../slice/createSliceTree";
 import {_Vue as Vue} from "../install";
+import {unifyObjectStyle} from "../utils";
 
-function installState(sliceNode) {
-    const parentState = sliceNode.parentState;
-    const state = sliceNode.state;
-    if (sliceNode.noNamespaced) {
-        Object.keys(state).forEach((key) => {
-            parentState[key] = state[key];
-        });
+function installMutations(store, sliceNode) {
+
+}
+
+function makeNamespaceLocalContextMap(rootSliceNode) {
+    const namespaceLocalContextMap = Object.create(null);
+    function registerLocalContext(sliceNode) {
+        const namespace = sliceNode.namespace;
+        if (namespace && !namespaceLocalContextMap[namespace]) {
+            namespaceLocalContextMap[namespace] = {
+                state: sliceNode.state,
+                dispatch: function (_type, _payload) {
+                    let {type, payload} = unifyObjectStyle(_type, _payload);
+                    if (!type.length) {
+                        console.error('Action type must not be empty string.');
+                    }
+                    const isGlobalType = type.indexOf('.') > -1;
+                    if (!isGlobalType) {
+                        if (type[0] !== '@')
+                            type = '@' + type
+                        type = namespace + type;
+                    }
+                    return store.dispatch(type, payload);
+                }
+            };
+        }
+        sliceNode.children.forEach((childSliceNode) => registerLocalContext(childSliceNode));
     }
-    else {
-        parentState[sliceNode.name] = state;
-    }
+    registerLocalContext(rootSliceNode);
+    return namespaceLocalContextMap;
 }
 
 function installSlices(store, sliceNode) {
-    installState(sliceNode);
-
+    installMutations(store, sliceNode);
+    //installEffects(store, sliceNode);
     sliceNode.children.forEach((childSliceNode) => installSlices(store, childSliceNode));
 }
 
-function createStoreVm(store) {
+function createStoreVm(store, state) {
     store._vm = new Vue({
         data: {
-            $$state: store.state
+            $$state: state
         }
     });
 }
 
-function addParentState(sliceNode, parentState) {
-    sliceNode.parentState = parentState;
-    if (!sliceNode.noNamespaced)
-        parentState = sliceNode.state;
-    sliceNode.children.forEach((childSliceNode) => addParentState(childSliceNode, parentState));
+function createStateTree(rootSliceNode) {
+    const state = {};
+    function registerState(sliceNode, parentState) {
+        const sliceState = sliceNode.state;
+        if (sliceNode.noNamespaced) {
+            Object.keys(sliceState).forEach((key) => {
+                parentState[key] = sliceState[key];
+            })
+        }
+        else {
+            const key = sliceNode.name;
+            parentState[key] = sliceState;
+            parentState = sliceState;
+        }
+        sliceNode.children.forEach((childSliceNode) => registerState(childSliceNode, parentState));
+    }
+    registerState(rootSliceNode, state);
+    return state;
 }
 
 function createStore(rootSlice) {
@@ -44,10 +77,11 @@ function createStore(rootSlice) {
     }
     const store = initStore();
     boundDispatchToStore(store);
-    const sliceTree = createSliceTree(rootSlice, '');
-    addParentState(sliceTree, store.state);
-    installSlices(store, sliceTree);
-    createStoreVm(store);
+    const rootSliceNode = createSliceTree(rootSlice, '');
+    const state = createStateTree(rootSliceNode);
+    store._namespaceLocalContextMap = makeNamespaceLocalContextMap(state, rootSliceNode);
+    installSlices(store, rootSliceNode);
+    createStoreVm(store, state);
     return store;
 }
 
