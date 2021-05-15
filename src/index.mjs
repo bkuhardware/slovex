@@ -1,12 +1,16 @@
 import Slovex from '../dist/slovex.common.js'
 
 const {
+    createStore,
     install,
-    createStore
-} = Slovex
+    mapStateToComputed,
+    mapDispatchToMethods
+} = Slovex;
 
 export {
     Slovex as default,
+    createStore,
     install,
-    createStore
+    mapStateToComputed,
+    mapDispatchToMethods
 }

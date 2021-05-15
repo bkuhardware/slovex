@@ -1,12 +1,17 @@
 import {install} from "./install";
-import createStore from "./store/createStore";
+import createStore from "./store";
+import {mapDispatchToMethods, mapStateToComputed} from "./helpers";
 
 export default {
     install,
-    createStore
+    createStore,
+    mapStateToComputed,
+    mapDispatchToMethods
 }
 
 export {
     install,
-    createStore
+    createStore,
+    mapStateToComputed,
+    mapDispatchToMethods
 }

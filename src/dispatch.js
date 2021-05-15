@@ -15,5 +15,3 @@ function dispatch(_type, _payload) {
     }
     return action(payload);
 }
-
-export default dispatch;

@@ -1,30 +1,7 @@
-import initStore from "./initStore";
-import {boundDispatchToStore} from "../dispatch";
-import createSliceTree from "../slice/createSliceTree";
-import {_Vue as Vue} from "../install";
-import {unifyObjectStyle} from "../utils";
-
-function installMutations(store, sliceNode, namespace, localContext) {
-    const mutations = sliceNode.mutations;
-    Object.keys(mutations).forEach((mutationName) => {
-        const handler = mutations[mutationName];
-        const actionName = namespace + '@' + mutationName;
-        store._actions[actionName] = function(payload) {
-            handler.call(store, localContext.state, payload)
-        }
-    });
-}
-
-function installEffects(store, sliceNode, namespace, localContext) {
-    const effects = sliceNode.effects;
-    Object.keys(effects).forEach((effectName) => {
-        const handler = effects[effectName];
-        const actionName = namespace + '@' + effectName;
-        store._actions[actionName] = function(payload) {
-            return handler.call(store, localContext, payload);
-        }
-    });
-}
+import {boundDispatchToStore} from "./dispatch";
+import {createSliceTree, installSlices} from "./slice";
+import {_Vue as Vue} from "./install";
+import {unifyObjectStyle} from "./utils";
 
 function makeNamespaceLocalContextMap(rootSliceNode) {
     const namespaceLocalContextMap = Object.create(null);
@@ -50,15 +27,6 @@ function makeNamespaceLocalContextMap(rootSliceNode) {
     }
     registerLocalContext(rootSliceNode);
     return namespaceLocalContextMap;
-}
-
-function installSlices(store, sliceNode) {
-    const namespaceLocalContextMap = store._namespaceLocalContextMap;
-    const namespace = sliceNode.namespace;
-    const localContext = namespace ? namespaceLocalContextMap[namespace] : store._globalContext;
-    installMutations(store, sliceNode, namespace, localContext);
-    installEffects(store, sliceNode, namespace, localContext);
-    sliceNode.children.forEach((childSliceNode) => installSlices(store, childSliceNode));
 }
 
 function createStoreVm(store, state) {
@@ -96,6 +64,21 @@ function makeStoreGlobalContext(store) {
         },
         dispatch: store.dispatch
     };
+}
+
+function initStore() {
+    const store = Object.create(null);
+    store.getters = {};
+    store._actions = {};
+    store._namespaceSliceMap = Object.create(null);
+    store._vm = new Vue();
+    store._namespaceLocalContextMap = Object.create(null);
+    Object.defineProperty(store, 'state', {
+        get: function() {
+            return this._vm._data.$$state;
+        }
+    });
+    return store;
 }
 
 function createStore(rootSlice) {
