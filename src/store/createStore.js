@@ -4,8 +4,22 @@ import createSliceTree from "../slice/createSliceTree";
 import {_Vue as Vue} from "../install";
 import {unifyObjectStyle} from "../utils";
 
-function installMutations(store, sliceNode) {
-
+function installMutations(store, rootSliceNode) {
+    const namespaceLocalContextMap = store._namespaceLocalContextMap;
+    function registerMutations(sliceNode) {
+        const mutations = sliceNode.mutations;
+        const namespace = sliceNode.namespace;
+        const localContext = namespaceLocalContextMap[namespace];
+        Object.keys(mutations).forEach((mutationName) => {
+            const handler = mutations[mutationName];
+            const actionName = namespace + '@' + mutationName;
+            store._actions[actionName] = function(payload) {
+                handler.call(store, localContext.state, payload)
+            }
+        });
+        sliceNode.children.forEach((childSliceNode) => registerMutations(childSliceNode));
+    }
+    registerMutations(rootSliceNode);
 }
 
 function makeNamespaceLocalContextMap(rootSliceNode) {
