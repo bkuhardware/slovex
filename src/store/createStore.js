@@ -22,6 +22,23 @@ function installMutations(store, rootSliceNode) {
     registerMutations(rootSliceNode);
 }
 
+function installEffects(store, rootSliceNode) {
+    const namespaceLocalContextMap = store._namespaceLocalContextMap;
+    function registerEffects(sliceNode) {
+        const effects = sliceNode.effects;
+        const namespace = sliceNode.namespace;
+        const localContext = namespaceLocalContextMap[namespace];
+        Object.keys(effects).forEach((effectName) => {
+            const handler = effects[effectName];
+            const actionName = namespace + '@' + effectName;
+            store._actions[actionName] = function(payload) {
+                return handler.call(store, localContext, payload);
+            }
+        });
+    }
+    registerEffects(rootSliceNode);
+}
+
 function makeNamespaceLocalContextMap(rootSliceNode) {
     const namespaceLocalContextMap = Object.create(null);
     function registerLocalContext(sliceNode) {
@@ -52,7 +69,7 @@ function makeNamespaceLocalContextMap(rootSliceNode) {
 
 function installSlices(store, sliceNode) {
     installMutations(store, sliceNode);
-    //installEffects(store, sliceNode);
+    installEffects(store, sliceNode);
     sliceNode.children.forEach((childSliceNode) => installSlices(store, childSliceNode));
 }
 
