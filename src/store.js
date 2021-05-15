@@ -3,7 +3,7 @@ import {createSliceTree, installSlices} from "./slice";
 import {_Vue as Vue} from "./install";
 import {unifyObjectStyle} from "./utils";
 
-function makeNamespaceLocalContextMap(rootSliceNode) {
+function makeNamespaceLocalContextMap(store, rootSliceNode) {
     const namespaceLocalContextMap = Object.create(null);
     function registerLocalContext(sliceNode) {
         const namespace = sliceNode.namespace;
@@ -91,7 +91,7 @@ function createStore(rootSlice) {
     makeStoreGlobalContext(store);
     const rootSliceNode = createSliceTree(rootSlice, '');
     const state = createStateTree(rootSliceNode);
-    store._namespaceLocalContextMap = makeNamespaceLocalContextMap(rootSliceNode);
+    store._namespaceLocalContextMap = makeNamespaceLocalContextMap(store, rootSliceNode);
     installSlices(store, rootSliceNode);
     createStoreVm(store, state);
     return store;

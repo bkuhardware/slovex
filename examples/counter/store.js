@@ -1,31 +1,50 @@
-import Vue from 'vue';
-import Slovex from 'slovex';
+import Vue from 'vue'
+import Slovex, {createStore} from 'slovex'
 
 Vue.use(Slovex);
 
-const { createStore } = Slovex;
+// root state object.
+// each Vuex instance is just a single state tree.
+const state = {
+    count: 0
+}
+
+// mutations are operations that actually mutate the state.
+// each mutation handler gets the entire state tree as the
+// first argument, followed by additional payload arguments.
+// mutations must be synchronous and can be recorded by plugins
+// for debugging purposes.
+const mutations = {
+    increment (state) {
+        state.count++
+    },
+    decrement (state) {
+        state.count--
+    }
+}
+
+// actions are functions that cause side effects and can involve
+// asynchronous operations.
+const effects = {
+    incrementIfOdd ({ dispatch, state }) {
+        if ((state.count + 1) % 2 === 0) {
+            dispatch('@increment')
+        }
+    },
+    incrementAsync ({ dispatch }) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                dispatch('@increment')
+                resolve()
+            }, 1000)
+        })
+    }
+}
 
 const store = createStore({
-    state: {
-        gay: true,
-        sex: 1
-    },
-    slices: [
-        {
-            state: {
-                test: 1
-            },
-            mutations: {
-                setTest(state, value) {
-                    state.test = value;
-                    state.gay = !state.gay;
-                    state.sex += 10000;
-                }
-            }
-        }
-    ]
+    state,
+    effects,
+    mutations
 });
-
-console.log(store);
 
 export default store;

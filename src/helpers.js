@@ -1,3 +1,5 @@
+import {isObject} from "./utils";
+
 export function mapStateToComputed(_namespace, _items) {
     const { namespace, items } = normalizeMap(_namespace, _items);
     const computedObj = Object.create(null);
@@ -22,10 +24,13 @@ export function mapDispatchToMethods(_namespace, _items) {
     const methodsObj = Object.create(null);
     items.forEach(({ key, val }) => {
         methodsObj[key] = function wrappedMethod(payload) {
-            let dispatch = store.dispatch;
+            let dispatch = this.$slovex.dispatch;
             if (namespace) {
                 const localContext = getLocalContext(this.$slovex, namespace);
                 dispatch = localContext.dispatch;
+            }
+            else if (val.indexOf('@') === -1) {
+                val = '@' + val;
             }
             return dispatch(val, payload);
         }
@@ -36,9 +41,18 @@ export function mapDispatchToMethods(_namespace, _items) {
 function normalizeItems(items) {
     if (!Array.isArray(items))
         return Object.keys(items).map((key) => ({ key, val: items[key] }));
-    return items.map(item => {
-        return typeof item === 'string' ? ({ key: item, val: item }) : item;
+    const resultItems = [];
+    items.forEach((item) => {
+        if (typeof item === 'string') {
+            resultItems.push({ key: item, val: item });
+        }
+        else if (isObject(item)) {
+            Object.keys(item).forEach((key) => {
+                resultItems.push({ key, val: item[key] })
+            });
+        }
     });
+    return resultItems;
 }
 
 function normalizeMap(namespace, items) {
