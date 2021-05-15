@@ -1,5 +1,5 @@
 <template>
-    <div>{{ $slovex.state.gay }}</div>
+    <div>{{ $slovex.state }}</div>
 </template>
 
 <script>
@@ -11,9 +11,14 @@
             }
         },
         mounted() {
-            this.$slovex.state.gay = 1000
-            console.log(this.$slovex.state);
-            console.log(this.$data);
+            setTimeout(() => {
+                const mutation = this.$slovex._actions['@setTest'];
+                mutation('new Test');
+                setTimeout(() => {
+                    const mutation = this.$slovex._actions['@setTest'];
+                    mutation('new Test');
+                }, 1000);
+            }, 2000)
         }
     }
 </script>

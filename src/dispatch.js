@@ -9,7 +9,11 @@ export function boundDispatchToStore(store) {
 function dispatch(_type, _payload) {
     const { type, payload } = unifyObjectStyle(_type, _payload);
     const store = this;
-
+    const action = store._actions[type];
+    if (!action) {
+        return console.error(`No action is matched with type ${type}.`);
+    }
+    return action(payload);
 }
 
 export default dispatch;

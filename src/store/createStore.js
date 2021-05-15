@@ -4,39 +4,26 @@ import createSliceTree from "../slice/createSliceTree";
 import {_Vue as Vue} from "../install";
 import {unifyObjectStyle} from "../utils";
 
-function installMutations(store, rootSliceNode) {
-    const namespaceLocalContextMap = store._namespaceLocalContextMap;
-    function registerMutations(sliceNode) {
-        const mutations = sliceNode.mutations;
-        const namespace = sliceNode.namespace;
-        const localContext = namespaceLocalContextMap[namespace];
-        Object.keys(mutations).forEach((mutationName) => {
-            const handler = mutations[mutationName];
-            const actionName = namespace + '@' + mutationName;
-            store._actions[actionName] = function(payload) {
-                handler.call(store, localContext.state, payload)
-            }
-        });
-        sliceNode.children.forEach((childSliceNode) => registerMutations(childSliceNode));
-    }
-    registerMutations(rootSliceNode);
+function installMutations(store, sliceNode, namespace, localContext) {
+    const mutations = sliceNode.mutations;
+    Object.keys(mutations).forEach((mutationName) => {
+        const handler = mutations[mutationName];
+        const actionName = namespace + '@' + mutationName;
+        store._actions[actionName] = function(payload) {
+            handler.call(store, localContext.state, payload)
+        }
+    });
 }
 
-function installEffects(store, rootSliceNode) {
-    const namespaceLocalContextMap = store._namespaceLocalContextMap;
-    function registerEffects(sliceNode) {
-        const effects = sliceNode.effects;
-        const namespace = sliceNode.namespace;
-        const localContext = namespaceLocalContextMap[namespace];
-        Object.keys(effects).forEach((effectName) => {
-            const handler = effects[effectName];
-            const actionName = namespace + '@' + effectName;
-            store._actions[actionName] = function(payload) {
-                return handler.call(store, localContext, payload);
-            }
-        });
-    }
-    registerEffects(rootSliceNode);
+function installEffects(store, sliceNode, namespace, localContext) {
+    const effects = sliceNode.effects;
+    Object.keys(effects).forEach((effectName) => {
+        const handler = effects[effectName];
+        const actionName = namespace + '@' + effectName;
+        store._actions[actionName] = function(payload) {
+            return handler.call(store, localContext, payload);
+        }
+    });
 }
 
 function makeNamespaceLocalContextMap(rootSliceNode) {
@@ -51,11 +38,9 @@ function makeNamespaceLocalContextMap(rootSliceNode) {
                     if (!type.length) {
                         console.error('Action type must not be empty string.');
                     }
-                    const isGlobalType = type.indexOf('.') > -1;
+                    const isGlobalType = type.indexOf('@') > -1;
                     if (!isGlobalType) {
-                        if (type[0] !== '@')
-                            type = '@' + type
-                        type = namespace + type;
+                        type = namespace + '@' + type;
                     }
                     return store.dispatch(type, payload);
                 }
@@ -68,8 +53,11 @@ function makeNamespaceLocalContextMap(rootSliceNode) {
 }
 
 function installSlices(store, sliceNode) {
-    installMutations(store, sliceNode);
-    installEffects(store, sliceNode);
+    const namespaceLocalContextMap = store._namespaceLocalContextMap;
+    const namespace = sliceNode.namespace;
+    const localContext = namespace ? namespaceLocalContextMap[namespace] : store._globalContext;
+    installMutations(store, sliceNode, namespace, localContext);
+    installEffects(store, sliceNode, namespace, localContext);
     sliceNode.children.forEach((childSliceNode) => installSlices(store, childSliceNode));
 }
 
@@ -101,6 +89,15 @@ function createStateTree(rootSliceNode) {
     return state;
 }
 
+function makeStoreGlobalContext(store) {
+    store._globalContext = {
+        get state() {
+            return store.state;
+        },
+        dispatch: store.dispatch
+    };
+}
+
 function createStore(rootSlice) {
     if (!Vue) {
         console.error('Slovex must be installed before creating a store.');
@@ -108,9 +105,10 @@ function createStore(rootSlice) {
     }
     const store = initStore();
     boundDispatchToStore(store);
+    makeStoreGlobalContext(store);
     const rootSliceNode = createSliceTree(rootSlice, '');
     const state = createStateTree(rootSliceNode);
-    store._namespaceLocalContextMap = makeNamespaceLocalContextMap(state, rootSliceNode);
+    store._namespaceLocalContextMap = makeNamespaceLocalContextMap(rootSliceNode);
     installSlices(store, rootSliceNode);
     createStoreVm(store, state);
     return store;

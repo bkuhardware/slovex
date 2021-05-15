@@ -12,9 +12,15 @@ const store = createStore({
     },
     slices: [
         {
-            namespace: 'mySlice',
             state: {
                 test: 1
+            },
+            mutations: {
+                setTest(state, value) {
+                    state.test = value;
+                    state.gay = !state.gay;
+                    state.sex += 10000;
+                }
             }
         }
     ]
